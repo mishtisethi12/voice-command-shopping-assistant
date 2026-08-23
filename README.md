@@ -76,12 +76,13 @@ streamlit run app.py
 
 ---
 
-## 📝 Approach & Architecture (Technical Summary)
+## 📝 Approach & Architecture 
+-Approach & Architecture Overview I built this Voice-Activated Shopping Assistant to make grocery management fast, intuitive, and hands-free. The app uses Streamlit for a clean, responsive UI, Supabase (PostgreSQL) for reliable real-time cart persistence, and Google’s Gemini 3.6-flash API to handle all natural language understanding. 
 
-* Architecture: Designed around a responsive Streamlit interface coupled with Supabase for real-time state persistence. Google Gemini 3.6-flash acts as the central intelligence engine for NLP tasks.
-* Intent Parsing: Voice inputs are converted to text and processed through Gemini with strict JSON schema enforcement (response_mime_type="application/json"). This structures multi-item inputs, quantity extractions, and language translation (Hindi/Hinglish to standardized English) into deterministic JSON payloads.
-* Price Matching: Item names are cross-referenced with a catalog dataset using flexible string distance matching to calculate instant cart estimates.
-* Contextual Intelligence: Suggestions leverage current cart state and past user history to surface relevant seasonal items, missing routine staples, and dietary alternatives.
+-To make voice input flexible, I integrated Google Speech Recognition supporting English, Hindi, and Hinglish. Instead of relying on basic keyword matching, Gemini parses voice commands into structured JSON objects. It intelligently translates item names into English and expands broad recipe requests (like "Chai banane ka samaan") into complete, categorized ingredient lists (tea, milk, sugar) with standard quantities. 
+
+-The assistant also features a smart recommendation engine that analyzes current cart items against user purchase history to suggest routine refills, seasonal options, and healthy substitutes like almond milk. Items are cross-referenced with a catalog dataset using flexible string matching to give instant estimated cart totals, while real-time spinners and toast alerts keep the user experience smooth and interactive. 
+
 
 ---
 
