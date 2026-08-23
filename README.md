@@ -55,7 +55,7 @@ voice-command-shopping-assistant/
 
 ### 2. Clone the Repository
 
-git clone [https://github.com/your-username/voice-command-shopping-assistant.git](https://www.google.com/search?q=https://github.com/your-username/voice-command-shopping-assistant.git)
+git clone [https://github.com/your-username/voice-command-shopping-assistant.git](https://www.google.com/search?q=https://github.com/mishtisethi12/voice-command-shopping-assistant.git)
 cd voice-command-shopping-assistant
 
 ### 3. Install Dependencies
