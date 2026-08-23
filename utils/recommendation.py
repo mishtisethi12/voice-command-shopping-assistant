@@ -1,32 +1,35 @@
-import os
-import streamlit as st
 import google.generativeai as genai
+import streamlit as st
 
-# Fetch Gemini API Key safely
-API_KEY = os.getenv("GEMINI_API_KEY") or (st.secrets["GEMINI_API_KEY"] if hasattr(st, "secrets") and "GEMINI_API_KEY" in st.secrets else None)
+api_key = st.secrets.get("GEMINI_API_KEY")
+if api_key:
+    genai.configure(api_key=api_key)
 
-if API_KEY:
-    genai.configure(api_key=API_KEY)
+def get_smart_suggestions(current_list, products_catalog, past_history):
+    """
+    Generates smart, seasonal, and substitute recommendations based on cart state.
+    """
+    if not api_key:
+        return "⚠️ Please set GEMINI_API_KEY in secrets.toml"
 
-def get_smart_suggestions(current_list, products_catalog):
-    if not API_KEY:
-        return "Gemini API Key is missing. Please check your setup."
+    model = genai.GenerativeModel("gemini-3.6-flash")
 
     prompt = f"""
-    You are a smart grocery shopping assistant.
-    Current Shopping List: {current_list}
-    Available Catalog: {products_catalog}
+    You are an intelligent grocery shopping assistant.
+    Current Shopping Cart: {current_list}
+    Product Catalog: {products_catalog}
+    User Past Purchase History: {past_history}
 
-    Provide 3 concise, helpful recommendations:
-    1. Product Recommendation (frequently bought together or missing staple)
-    2. Seasonal Item Suggestion
-    3. Smart/Healthier Substitute (e.g., suggest almond milk if dairy milk is present)
+    Provide concise recommendations formatted nicely in Markdown:
+    1. 🔄 **Running Low / Routine Items**: Suggest 2 items based on history or missing complementary items (e.g., if coffee is in cart, suggest sugar).
+    2. 🌿 **Seasonal / On Sale**: Suggest 2 seasonal or trending budget items.
+    3. 🔁 **Smart Substitutes**: If an item in the cart is dairy or generic, suggest 1 healthier or alternative option (e.g., Almond Milk for Milk).
 
-    Format as a plain text bulleted list (max 15 words per line).
+    Keep the total response under 100 words and use clear bullet points.
     """
+
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        return f"Unable to fetch suggestions right now. ({e})"
+        return f"Error generating suggestions: {e}"

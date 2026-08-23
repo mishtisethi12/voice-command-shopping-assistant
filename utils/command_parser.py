@@ -1,78 +1,72 @@
 import json
-import os
-import re
-import streamlit as st
 import google.generativeai as genai
+import streamlit as st
 
-# Safe key retrieval
-API_KEY = os.getenv("GEMINI_API_KEY")
-if not API_KEY and hasattr(st, "secrets") and "GEMINI_API_KEY" in st.secrets:
-    API_KEY = st.secrets["GEMINI_API_KEY"]
+# Configure Gemini API
+api_key = st.secrets.get("GEMINI_API_KEY")
+if api_key:
+    genai.configure(api_key=api_key)
 
-if API_KEY:
-    genai.configure(api_key=API_KEY)
-def parse_voice_command(user_text):
+def parse_voice_command(user_text: str):
+    """
+    Parses natural language commands (English, Hindi, Hinglish) into structured JSON.
+    Supports single-item commands and multi-item recipe expansions using Gemini API.
+    """
+    if not api_key:
+        return {"action": "UNKNOWN", "items": []}
+
+    model = genai.GenerativeModel("gemini-3.6-flash")
+
     prompt = f"""
-    You are an AI parsing voice commands for a grocery app: "{user_text}"
+    You are an AI grocery assistant parser. Analyze the user command in English, Hindi, or Hinglish:
+    "{user_text}"
 
-    Instructions:
-    - action: "ADD", "REMOVE", "SEARCH", or "UNKNOWN"
-    - item_name: Clean item name in lowercase singular/plural form (e.g., "pineapple", "bananas", "milk"). Remove action verbs ("add", "buy") and numbers.
-    - quantity: Convert spoken numbers or digits to an INTEGER (e.g. "3", "three" -> 3). Default to 1 if no quantity is specified.
-    - category: "Produce", "Dairy", "Bakery", "Hygiene", or "General".
-    - max_price: Numerical float limit if specified (e.g. 5.0). Otherwise null.
+    Tasks:
+    1. Identify intent:
+       - ADD: Adding single items OR recipe/dish ingredients (e.g. "Chai banane ka samaan", "Paneer Tikka ingredients").
+       - REMOVE: Deleting item(s) from cart.
+       - SEARCH: Searching catalog or prices.
+    2. Extract item details:
+       - If it is a recipe (like "chai", "coffee", "pasta", "butter chicken"), automatically list all fundamental individual grocery items required for it.
+       - Translate Hindi/Hinglish item names into clean, standard English product names (e.g., "Chai Patty" -> "Tea Powder", "Doodh" -> "Milk", "Chini" -> "Sugar").
+
+    Return strictly a JSON object with this structure:
+    {{
+        "action": "ADD",
+        "items": [
+            {{
+                "item_name": "Tea Powder",
+                "quantity": 1,
+                "category": "Beverages",
+                "max_price": null,
+                "brand": null
+            }},
+            {{
+                "item_name": "Milk",
+                "quantity": 1,
+                "category": "Dairy",
+                "max_price": null,
+                "brand": null
+            }},
+            {{
+                "item_name": "Sugar",
+                "quantity": 1,
+                "category": "General",
+                "max_price": null,
+                "brand": null
+            }}
+        ]
+    }}
     """
 
-    # Define schema directly
-    schema = {
-        "type": "OBJECT",
-        "properties": {
-            "action": {"type": "STRING", "enum": ["ADD", "REMOVE", "SEARCH", "UNKNOWN"]},
-            "item_name": {"type": "STRING"},
-            "quantity": {"type": "INTEGER"},
-            "category": {"type": "STRING"},
-            "max_price": {"type": "NUMBER", "nullable": True}
-        },
-        "required": ["action", "item_name", "quantity", "category"]
-    }
-
     try:
-        model = genai.GenerativeModel(
-            "gemini-1.5-flash",
-            generation_config={
-                "response_mime_type": "application/json",
-                "response_schema": schema
-            }
+        # Enforce strict JSON output mode
+        response = model.generate_content(
+            prompt,
+            generation_config={"response_mime_type": "application/json"}
         )
-        response = model.generate_content(prompt)
-        return json.loads(response.text)
-
+        parsed_data = json.loads(response.text.strip())
+        return parsed_data
     except Exception as e:
-        print(f"Gemini API Error: {e}")
-        text_lower = user_text.lower().strip()
-
-        # Regex fallback for quantities
-        qty_match = re.search(r'\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\b', text_lower)
-        num_map = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10}
-        
-        qty = 1
-        if qty_match:
-            val = qty_match.group(1)
-            qty = int(val) if val.isdigit() else num_map.get(val, 1)
-
-        # Strip standard stopwords
-        clean_item = text_lower
-        for word in ["add", "buy", "remove", "delete", "find", "search", str(qty), "one", "two", "three", "four", "five"]:
-            clean_item = re.sub(rf'\b{word}\b', '', clean_item)
-        
-        clean_item = clean_item.strip()
-
-        action = "ADD" if any(k in text_lower for k in ["add", "buy"]) else ("REMOVE" if any(k in text_lower for k in ["remove", "delete"]) else "UNKNOWN")
-
-        return {
-            "action": action,
-            "item_name": clean_item if clean_item else "item",
-            "quantity": qty,
-            "category": "General",
-            "max_price": None
-        }
+        st.error(f"Gemini API Error: {e}")
+        return {"action": "UNKNOWN", "items": []}
