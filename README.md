@@ -31,6 +31,7 @@ An intelligent, voice-activated grocery list manager built with Streamlit, Supab
 
 ## 📁 Project Structure
 
+```text
 voice-command-shopping-assistant/
 ├── data/
 │   ├── products.csv            # Product catalog for price lookup
@@ -42,6 +43,7 @@ voice-command-shopping-assistant/
 ├── app.py                      # Main Streamlit web application
 ├── requirements.txt            # Python dependencies
 └── README.md                   # Project documentation
+```
 
 ---
 
