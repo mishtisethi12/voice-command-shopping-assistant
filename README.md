@@ -2,7 +2,7 @@
 
 An intelligent, voice-activated grocery list manager built with Streamlit, Supabase (PostgreSQL), and Google Gemini 3.6-flash. The application enables multi-lingual voice/text input, natural language intent parsing, recipe-to-cart multi-item expansion, real-time price estimation, and contextual AI recommendations.
 
-
+*Live Demo: [https://voice-command-shopping-assistant-ez4uos2dyrfuwayxjx3ivh.streamlit.app/]
 📂 GitHub Repository: [https://github.com/mishtisethi12/voice-command-shopping-assistant](https://www.google.com/url?sa=E&source=gmail&q=https://github.com/your-username/voice-command-shopping-assistant)
 
 ---
